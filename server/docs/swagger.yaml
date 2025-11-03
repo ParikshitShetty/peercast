@@ -1,0 +1,26 @@
+basePath: /
+host: localhost:8080
+info:
+  contact: {}
+  description: Simple Go video streaming service with Swagger docs.
+  title: Go Video Streaming API
+  version: "1.0"
+paths:
+  /video:
+    get:
+      description: Streams MP4 video content with support for range requests
+      produces:
+      - video/mp4
+      responses:
+        "206":
+          description: Partial Content
+          schema:
+            type: string
+        "404":
+          description: Video not found
+          schema:
+            type: string
+      summary: Stream a video file
+      tags:
+      - Video
+swagger: "2.0"

@@ -1,0 +1,39 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Simple Go video streaming service with Swagger docs.",
+        "title": "Go Video Streaming API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/video": {
+            "get": {
+                "description": "Streams MP4 video content with support for range requests",
+                "produces": [
+                    "video/mp4"
+                ],
+                "tags": [
+                    "Video"
+                ],
+                "summary": "Stream a video file",
+                "responses": {
+                    "206": {
+                        "description": "Partial Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Video not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
