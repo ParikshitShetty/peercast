@@ -1,4 +1,4 @@
-package api
+package streaming
 
 import (
 	"fmt"

@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 
-	"github.com/ParikshitShetty/peercast/server/api"
+	"github.com/ParikshitShetty/peercast/server/api/streaming"
+	"github.com/ParikshitShetty/peercast/server/internal/configs"
+	"github.com/ParikshitShetty/peercast/server/internal/database"
 
 	_ "github.com/ParikshitShetty/peercast/server/docs"
 
@@ -18,7 +21,16 @@ import (
 // @host localhost:8080
 // @BasePath /
 func main() {
-	http.HandleFunc("/video", api.StreamVideo)
+	ctx := context.Background()
+	cfg := configs.Load()
+
+	// Initialize DB connection on server startup
+	if err := database.Init(ctx, cfg); err != nil {
+		log.Fatalf("db init failed: %v", err)
+	}
+	defer database.Close()
+
+	http.HandleFunc("/video", streaming.StreamVideo)
 
 	// Swagger endpoint
 	http.Handle("/docs/", httpSwagger.WrapHandler)
