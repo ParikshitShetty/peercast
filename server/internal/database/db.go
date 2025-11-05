@@ -2,63 +2,60 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/ParikshitShetty/peercast/server/internal/configs"
-	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/uptrace/bun"
+	"github.com/uptrace/bun/dialect/pgdialect"
+	"github.com/uptrace/bun/driver/pgdriver"
 )
 
-var pool *pgxpool.Pool
+var DB *bun.DB
 
-// Init initializes the global database connection pool.
+// Init initializes a global Bun DB connection.
 func Init(ctx context.Context, cfg *configs.DBConfig) error {
 	dsn := fmt.Sprintf(
-		"user=%s password=%s host=%s port=%d dbname=%s sslmode=%s",
+		"postgres://%s:%s@%s:%d/%s?sslmode=%s",
 		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DBName, cfg.SSLMode,
 	)
 
-	poolCfg, err := pgxpool.ParseConfig(dsn)
-	if err != nil {
-		return fmt.Errorf("parse config: %w", err)
-	}
+	// Create sql.DB
+	sqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsn)))
 
-	// Apply tuning / limits
-	poolCfg.MaxConns = int32(cfg.MaxConns)
-	poolCfg.MinConns = int32(cfg.MinConns)
-	poolCfg.MaxConnLifetime = 30 * time.Minute
-	poolCfg.MaxConnIdleTime = 5 * time.Minute
+	// Tuning
+	sqldb.SetMaxOpenConns(cfg.MaxConns)
+	sqldb.SetMaxIdleConns(cfg.MinConns)
+	sqldb.SetConnMaxLifetime(30 * time.Minute)
+	sqldb.SetConnMaxIdleTime(5 * time.Minute)
 
-	// Connect
-	dbpool, err := pgxpool.NewWithConfig(ctx, poolCfg)
-	if err != nil {
-		return fmt.Errorf("connect: %w", err)
-	}
-
-	// Test connection
-	if err := dbpool.Ping(ctx); err != nil {
-		dbpool.Close()
+	// Verify connection
+	if err := sqldb.PingContext(ctx); err != nil {
 		return fmt.Errorf("ping: %w", err)
 	}
 
-	pool = dbpool
-	log.Println("✅ Database connected successfully!")
+	// ✅ Wrap with Bun using PostgreSQL dialect
+	DB = bun.NewDB(sqldb, pgdialect.New())
+
+	log.Println("✅ Bun DB connected successfully!")
 	return nil
 }
 
-// GetPool returns the global pool instance
-func GetPool() *pgxpool.Pool {
-	if pool == nil {
-		log.Fatal("database pool not initialized — call database.Init() first")
+func Get() *bun.DB {
+	if DB == nil {
+		log.Fatal("database not initialized — call database.Init() first")
 	}
-	return pool
+	return DB
 }
 
-// Close terminates the pool connection
 func Close() {
-	if pool != nil {
-		log.Println("🧹 Closing database pool...")
-		pool.Close()
+	if DB != nil {
+		log.Println("🧹 Closing Bun DB connection...")
+		if err := DB.DB.Close(); err != nil {
+			log.Printf("error closing DB: %v", err)
+		}
 	}
 }

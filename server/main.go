@@ -30,6 +30,10 @@ func main() {
 	}
 	defer database.Close()
 
+	if err := database.EnsureSchema(ctx); err != nil {
+		log.Fatalf("schema setup failed: %v", err)
+	}
+
 	http.HandleFunc("/video", streaming.StreamVideo)
 
 	// Swagger endpoint
