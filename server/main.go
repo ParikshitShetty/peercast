@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/ParikshitShetty/peercast/server/api/streaming"
+	"github.com/ParikshitShetty/peercast/server/api"
 	"github.com/ParikshitShetty/peercast/server/internal/configs"
 	"github.com/ParikshitShetty/peercast/server/internal/database"
 
@@ -34,12 +34,15 @@ func main() {
 		log.Fatalf("schema setup failed: %v", err)
 	}
 
-	http.HandleFunc("/video", streaming.StreamVideo)
+	mux := http.NewServeMux()
+	api.RegisterRoutes(mux)
 
-	// Swagger endpoint
-	http.Handle("/docs/", httpSwagger.WrapHandler)
+	// Swagger setup
+	mux.Handle("/swagger/", httpSwagger.Handler(
+		httpSwagger.URL("http://localhost:8080/swagger/doc.json"),
+	))
 
 	fmt.Println("🚀 Server running at http://localhost:8080")
-	fmt.Println("📘 Swagger docs at http://localhost:8080/docs/index.html")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	fmt.Println("📘 Swagger docs at http://localhost:8080/swagger/index.html")
+	log.Fatal(http.ListenAndServe(":8080", mux))
 }
