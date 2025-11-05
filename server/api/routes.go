@@ -5,12 +5,13 @@ import (
 
 	"github.com/ParikshitShetty/peercast/server/api/files"
 	"github.com/ParikshitShetty/peercast/server/api/streaming"
+	middleware "github.com/ParikshitShetty/peercast/server/internal/middleware/api"
 )
 
 func RegisterRoutes(mux *http.ServeMux) {
 	// File CRUD
 	// mux.HandleFunc("/api/files/create", files.)
-	mux.HandleFunc("/api/files/list", files.GetAll)
+	mux.HandleFunc("/api/files/list", middleware.JSONResponseHandler(files.GetAll))
 	// mux.HandleFunc("/api/files/get", repository.GetFileByID)
 	// mux.HandleFunc("/api/files/update", repository.UpdateFile())
 	// mux.HandleFunc("/api/files/delete", repository.DeleteFileByID())
